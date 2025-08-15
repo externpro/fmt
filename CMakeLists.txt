@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.8...3.28)
+cmake_minimum_required(VERSION 3.8...3.31)
 
 # Fallback for using newer policies on CMake <3.12.
 if (${CMAKE_VERSION} VERSION_LESS 3.12)
@@ -152,7 +152,19 @@ if (FMT_MASTER_PROJECT AND NOT CMAKE_BUILD_TYPE)
               "CMAKE_C_FLAGS used) Debug Release RelWithDebInfo MinSizeRel.")
 endif ()
 
+list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR}/.devcontainer/cmake)
+include(preproject)
 project(FMT CXX)
+if(DEFINED XP_INSTALL_CMAKEDIR)
+  # externpro
+  include(flags)
+  set(FMT_CMAKE_DIR ${XP_INSTALL_CMAKEDIR})
+  set(FMT_COMPONENT devel)
+  set(FMT_NAMESPACE xpro::)
+else()
+  set(FMT_COMPONENT fmt-core)
+  set(FMT_NAMESPACE fmt::)
+endif()
 include(GNUInstallDirs)
 set_verbose(FMT_INC_DIR ${CMAKE_INSTALL_INCLUDEDIR} CACHE STRING
             "Installation directory for include files, a relative path that "
@@ -385,6 +397,12 @@ target_include_directories(fmt-header-only
 
 # Install targets.
 if (FMT_INSTALL)
+  if(DEFINED XP_INSTALL_CMAKEDIR)
+    set(libs fmt fmt-header-only)
+    list(TRANSFORM libs PREPEND ${FMT_NAMESPACE})
+    set(CPACK_PACKAGE_NAME fmt)
+    xpPackageDevel(TARGETS_FILE fmt-targets LIBRARIES ${libs})
+  endif()
   include(CMakePackageConfigHelpers)
   set_verbose(FMT_CMAKE_DIR ${CMAKE_INSTALL_LIBDIR}/cmake/fmt CACHE STRING
               "Installation directory for cmake files, a relative path that "
@@ -431,7 +449,7 @@ if (FMT_INSTALL)
 
   # Install the library and headers.
   install(TARGETS ${INSTALL_TARGETS}
-          COMPONENT fmt-core
+          COMPONENT ${FMT_COMPONENT}
           EXPORT ${targets_export_name}
           LIBRARY DESTINATION ${FMT_LIB_DIR}
           ARCHIVE DESTINATION ${FMT_LIB_DIR}
@@ -441,19 +459,21 @@ if (FMT_INSTALL)
 
   # Use a namespace because CMake provides better diagnostics for namespaced
   # imported targets.
-  export(TARGETS ${INSTALL_TARGETS} NAMESPACE fmt::
+  export(TARGETS ${INSTALL_TARGETS} NAMESPACE ${FMT_NAMESPACE}
          FILE ${PROJECT_BINARY_DIR}/${targets_export_name}.cmake)
 
   # Install version, config and target files.
   install(FILES ${project_config} ${version_config}
           DESTINATION ${FMT_CMAKE_DIR}
-          COMPONENT fmt-core)
+          COMPONENT ${FMT_COMPONENT})
   install(EXPORT ${targets_export_name} DESTINATION ${FMT_CMAKE_DIR}
-          NAMESPACE fmt::
-          COMPONENT fmt-core)
+          NAMESPACE ${FMT_NAMESPACE}
+          COMPONENT ${FMT_COMPONENT})
 
-  install(FILES "${pkgconfig}" DESTINATION "${FMT_PKGCONFIG_DIR}"
-          COMPONENT fmt-core)
+  if(NOT DEFINED XP_INSTALL_CMAKEDIR)
+    install(FILES "${pkgconfig}" DESTINATION "${FMT_PKGCONFIG_DIR}"
+            COMPONENT ${FMT_COMPONENT})
+  endif()
 endif ()
 
 function(add_doc_target)
@@ -515,7 +535,7 @@ if (FMT_FUZZ)
 endif ()
 
 set(gitignore ${PROJECT_SOURCE_DIR}/.gitignore)
-if (FMT_MASTER_PROJECT AND EXISTS ${gitignore})
+if (FMT_MASTER_PROJECT AND EXISTS ${gitignore} AND NOT DEFINED XP_INSTALL_CMAKEDIR)
   # Get the list of ignored files from .gitignore.
   file (STRINGS ${gitignore} lines)
   list(REMOVE_ITEM lines /doc/html)
