@@ -155,16 +155,7 @@ endif ()
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR}/.devcontainer/cmake)
 include(preproject)
 project(FMT CXX)
-if(DEFINED XP_INSTALL_CMAKEDIR)
-  # externpro
-  include(flags)
-  set(FMT_CMAKE_DIR ${XP_INSTALL_CMAKEDIR})
-  set(FMT_COMPONENT devel)
-  set(FMT_NAMESPACE xpro::)
-else()
-  set(FMT_COMPONENT fmt-core)
-  set(FMT_NAMESPACE fmt::)
-endif()
+include(flags)
 include(GNUInstallDirs)
 set_verbose(FMT_INC_DIR ${CMAKE_INSTALL_INCLUDEDIR} CACHE STRING
             "Installation directory for include files, a relative path that "
@@ -398,11 +389,16 @@ target_include_directories(fmt-header-only
 # Install targets.
 if (FMT_INSTALL)
   if(DEFINED XP_INSTALL_CMAKEDIR)
+    set(FMT_CMAKE_DIR ${XP_INSTALL_CMAKEDIR})
+    set(FMT_COMPONENT devel)
+    set(FMT_NAMESPACE xpro::)
     set(libs fmt fmt-header-only)
     list(TRANSFORM libs PREPEND ${FMT_NAMESPACE})
     set(CPACK_PACKAGE_NAME fmt)
     xpPackageDevel(TARGETS_FILE fmt-targets LIBRARIES ${libs})
-  endif()
+  else()
+  set(FMT_COMPONENT fmt-core)
+  set(FMT_NAMESPACE fmt::)
   include(CMakePackageConfigHelpers)
   set_verbose(FMT_CMAKE_DIR ${CMAKE_INSTALL_LIBDIR}/cmake/fmt CACHE STRING
               "Installation directory for cmake files, a relative path that "
@@ -411,18 +407,22 @@ if (FMT_INSTALL)
   set(version_config ${PROJECT_BINARY_DIR}/fmt-config-version.cmake)
   set(project_config ${PROJECT_BINARY_DIR}/fmt-config.cmake)
   set(pkgconfig ${PROJECT_BINARY_DIR}/fmt.pc)
+  endif() # XP_INSTALL_CMAKEDIR
   set(targets_export_name fmt-targets)
 
   set_verbose(FMT_LIB_DIR ${CMAKE_INSTALL_LIBDIR} CACHE STRING
               "Installation directory for libraries, a relative path that "
               "will be joined to ${CMAKE_INSTALL_PREFIX} or an absolute path.")
 
+  if(NOT DEFINED XP_INSTALL_CMAKEDIR)
   set_verbose(FMT_PKGCONFIG_DIR ${CMAKE_INSTALL_LIBDIR}/pkgconfig CACHE STRING
               "Installation directory for pkgconfig (.pc) files, a relative "
               "path that will be joined with ${CMAKE_INSTALL_PREFIX} or an "
               "absolute path.")
+  endif() # XP_INSTALL_CMAKEDIR
 
   # Generate the version, config and target files into the build directory.
+  if(NOT DEFINED XP_INSTALL_CMAKEDIR)
   write_basic_package_version_file(
     ${version_config}
     VERSION ${FMT_VERSION}
@@ -439,6 +439,7 @@ if (FMT_INSTALL)
     ${PROJECT_SOURCE_DIR}/support/cmake/fmt-config.cmake.in
     ${project_config}
     INSTALL_DESTINATION ${FMT_CMAKE_DIR})
+  endif() # XP_INSTALL_CMAKEDIR
 
   set(INSTALL_TARGETS fmt fmt-header-only)
 
@@ -463,17 +464,19 @@ if (FMT_INSTALL)
          FILE ${PROJECT_BINARY_DIR}/${targets_export_name}.cmake)
 
   # Install version, config and target files.
+  if(NOT DEFINED XP_INSTALL_CMAKEDIR)
   install(FILES ${project_config} ${version_config}
           DESTINATION ${FMT_CMAKE_DIR}
-          COMPONENT ${FMT_COMPONENT})
+          COMPONENT fmt-core)
+  endif() # XP_INSTALL_CMAKEDIR
   install(EXPORT ${targets_export_name} DESTINATION ${FMT_CMAKE_DIR}
           NAMESPACE ${FMT_NAMESPACE}
           COMPONENT ${FMT_COMPONENT})
 
   if(NOT DEFINED XP_INSTALL_CMAKEDIR)
-    install(FILES "${pkgconfig}" DESTINATION "${FMT_PKGCONFIG_DIR}"
-            COMPONENT ${FMT_COMPONENT})
-  endif()
+  install(FILES "${pkgconfig}" DESTINATION "${FMT_PKGCONFIG_DIR}"
+          COMPONENT fmt-core)
+  endif() # XP_INSTALL_CMAKEDIR
 endif ()
 
 function(add_doc_target)
