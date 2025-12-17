@@ -152,10 +152,8 @@ if (FMT_MASTER_PROJECT AND NOT CMAKE_BUILD_TYPE)
               "CMAKE_C_FLAGS used) Debug Release RelWithDebInfo MinSizeRel.")
 endif ()
 
-list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR}/.devcontainer/cmake)
-include(preproject)
+set(CMAKE_PROJECT_TOP_LEVEL_INCLUDES .devcontainer/cmake/xproinc.cmake)
 project(FMT CXX)
-include(flags)
 include(GNUInstallDirs)
 set_verbose(FMT_INC_DIR ${CMAKE_INSTALL_INCLUDEDIR} CACHE STRING
             "Installation directory for include files, a relative path that "
@@ -388,17 +386,14 @@ target_include_directories(fmt-header-only
 
 # Install targets.
 if (FMT_INSTALL)
-  if(DEFINED XP_INSTALL_CMAKEDIR)
-    set(FMT_CMAKE_DIR ${XP_INSTALL_CMAKEDIR})
-    set(FMT_COMPONENT devel)
-    set(FMT_NAMESPACE xpro::)
-    set(libs fmt fmt-header-only)
-    list(TRANSFORM libs PREPEND ${FMT_NAMESPACE})
-    set(CPACK_PACKAGE_NAME fmt)
-    xpPackageDevel(TARGETS_FILE fmt-targets LIBRARIES ${libs})
+  if(DEFINED XP_NAMESPACE)
+    set(FMT_CMAKE_DIR ${CMAKE_INSTALL_DATADIR}/cmake)
+    set(FMT_NAMESPACE ${XP_NAMESPACE})
+    xpExternPackage(REPO_NAME fmt NAMESPACE ${XP_NAMESPACE}
+      TARGETS_FILE fmt-targets LIBRARIES fmt fmt-header-only
+      )
   else()
-  set(FMT_COMPONENT fmt-core)
-  set(FMT_NAMESPACE fmt::)
+  set(FMT_NAMESPACE fmt)
   include(CMakePackageConfigHelpers)
   set_verbose(FMT_CMAKE_DIR ${CMAKE_INSTALL_LIBDIR}/cmake/fmt CACHE STRING
               "Installation directory for cmake files, a relative path that "
@@ -407,22 +402,22 @@ if (FMT_INSTALL)
   set(version_config ${PROJECT_BINARY_DIR}/fmt-config-version.cmake)
   set(project_config ${PROJECT_BINARY_DIR}/fmt-config.cmake)
   set(pkgconfig ${PROJECT_BINARY_DIR}/fmt.pc)
-  endif() # XP_INSTALL_CMAKEDIR
+  endif() # XP_NAMESPACE
   set(targets_export_name fmt-targets)
 
   set_verbose(FMT_LIB_DIR ${CMAKE_INSTALL_LIBDIR} CACHE STRING
               "Installation directory for libraries, a relative path that "
               "will be joined to ${CMAKE_INSTALL_PREFIX} or an absolute path.")
 
-  if(NOT DEFINED XP_INSTALL_CMAKEDIR)
+  if(NOT DEFINED XP_NAMESPACE)
   set_verbose(FMT_PKGCONFIG_DIR ${CMAKE_INSTALL_LIBDIR}/pkgconfig CACHE STRING
               "Installation directory for pkgconfig (.pc) files, a relative "
               "path that will be joined with ${CMAKE_INSTALL_PREFIX} or an "
               "absolute path.")
-  endif() # XP_INSTALL_CMAKEDIR
+  endif() # XP_NAMESPACE
 
   # Generate the version, config and target files into the build directory.
-  if(NOT DEFINED XP_INSTALL_CMAKEDIR)
+  if(NOT DEFINED XP_NAMESPACE)
   write_basic_package_version_file(
     ${version_config}
     VERSION ${FMT_VERSION}
@@ -439,7 +434,7 @@ if (FMT_INSTALL)
     ${PROJECT_SOURCE_DIR}/support/cmake/fmt-config.cmake.in
     ${project_config}
     INSTALL_DESTINATION ${FMT_CMAKE_DIR})
-  endif() # XP_INSTALL_CMAKEDIR
+  endif() # XP_NAMESPACE
 
   set(INSTALL_TARGETS fmt fmt-header-only)
 
@@ -450,7 +445,7 @@ if (FMT_INSTALL)
 
   # Install the library and headers.
   install(TARGETS ${INSTALL_TARGETS}
-          COMPONENT ${FMT_COMPONENT}
+          COMPONENT fmt-core
           EXPORT ${targets_export_name}
           LIBRARY DESTINATION ${FMT_LIB_DIR}
           ARCHIVE DESTINATION ${FMT_LIB_DIR}
@@ -460,23 +455,23 @@ if (FMT_INSTALL)
 
   # Use a namespace because CMake provides better diagnostics for namespaced
   # imported targets.
-  export(TARGETS ${INSTALL_TARGETS} NAMESPACE ${FMT_NAMESPACE}
+  export(TARGETS ${INSTALL_TARGETS} NAMESPACE ${FMT_NAMESPACE}::
          FILE ${PROJECT_BINARY_DIR}/${targets_export_name}.cmake)
 
   # Install version, config and target files.
-  if(NOT DEFINED XP_INSTALL_CMAKEDIR)
+  if(NOT DEFINED XP_NAMESPACE)
   install(FILES ${project_config} ${version_config}
           DESTINATION ${FMT_CMAKE_DIR}
           COMPONENT fmt-core)
-  endif() # XP_INSTALL_CMAKEDIR
+  endif() # XP_NAMESPACE
   install(EXPORT ${targets_export_name} DESTINATION ${FMT_CMAKE_DIR}
-          NAMESPACE ${FMT_NAMESPACE}
-          COMPONENT ${FMT_COMPONENT})
+          NAMESPACE ${FMT_NAMESPACE}::
+          COMPONENT fmt-core)
 
-  if(NOT DEFINED XP_INSTALL_CMAKEDIR)
+  if(NOT DEFINED XP_NAMESPACE)
   install(FILES "${pkgconfig}" DESTINATION "${FMT_PKGCONFIG_DIR}"
           COMPONENT fmt-core)
-  endif() # XP_INSTALL_CMAKEDIR
+  endif() # XP_NAMESPACE
 endif ()
 
 function(add_doc_target)
@@ -538,7 +533,7 @@ if (FMT_FUZZ)
 endif ()
 
 set(gitignore ${PROJECT_SOURCE_DIR}/.gitignore)
-if (FMT_MASTER_PROJECT AND EXISTS ${gitignore} AND NOT DEFINED XP_INSTALL_CMAKEDIR)
+if (FMT_MASTER_PROJECT AND EXISTS ${gitignore} AND NOT DEFINED XP_NAMESPACE)
   # Get the list of ignored files from .gitignore.
   file (STRINGS ${gitignore} lines)
   list(REMOVE_ITEM lines /doc/html)
