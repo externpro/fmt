@@ -391,6 +391,10 @@ if (FMT_INSTALL)
     set(FMT_NAMESPACE ${XP_NAMESPACE})
     xpExternPackage(REPO_NAME fmt NAMESPACE ${XP_NAMESPACE} ALIAS_NAMESPACE fmt
       TARGETS_FILE fmt-targets LIBRARIES fmt fmt-header-only
+      BASE ${FMT_VERSION} XPDIFF "patch"
+      WEB "https://fmt.dev/" UPSTREAM "github.com/fmtlib/fmt"
+      DESC "A modern formatting library"
+      LICENSE "[MIT](https://github.com/fmtlib/fmt?tab=MIT-1-ov-file#readme 'MIT License')"
       )
   else()
   set(FMT_NAMESPACE fmt)
