@@ -387,7 +387,6 @@ target_include_directories(fmt-header-only
 # Install targets.
 if (FMT_INSTALL)
   if(DEFINED XP_NAMESPACE)
-    set(FMT_CMAKE_DIR ${CMAKE_INSTALL_DATADIR}/cmake)
     set(FMT_NAMESPACE ${XP_NAMESPACE})
     xpExternPackage(REPO_NAME fmt NAMESPACE ${XP_NAMESPACE} ALIAS_NAMESPACE fmt
       TARGETS_FILE fmt-targets LIBRARIES fmt fmt-header-only
@@ -396,6 +395,7 @@ if (FMT_INSTALL)
       DESC "A modern formatting library"
       LICENSE "[MIT](https://github.com/fmtlib/fmt?tab=MIT-1-ov-file#readme 'MIT License')"
       )
+    set(FMT_CMAKE_DIR ${CMAKE_INSTALL_CMAKEDIR})
   else()
   set(FMT_NAMESPACE fmt)
   include(CMakePackageConfigHelpers)
