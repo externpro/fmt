@@ -386,9 +386,8 @@ target_include_directories(fmt-header-only
 
 # Install targets.
 if (FMT_INSTALL)
-  if(DEFINED XP_NAMESPACE)
-    set(FMT_NAMESPACE ${XP_NAMESPACE})
-    xpExternPackage(REPO_NAME fmt NAMESPACE ${XP_NAMESPACE} ALIAS_NAMESPACE fmt
+  if(COMMAND xpExternPackage)
+    xpExternPackage(REPO_NAME fmt
       TARGETS_FILE fmt-targets LIBRARIES fmt fmt-header-only
       BASE ${FMT_VERSION} XPDIFF "patch"
       WEB "https://fmt.dev/" UPSTREAM "github.com/fmtlib/fmt"
@@ -397,7 +396,6 @@ if (FMT_INSTALL)
       )
     set(FMT_CMAKE_DIR ${CMAKE_INSTALL_CMAKEDIR})
   else()
-  set(FMT_NAMESPACE fmt)
   include(CMakePackageConfigHelpers)
   set_verbose(FMT_CMAKE_DIR ${CMAKE_INSTALL_LIBDIR}/cmake/fmt CACHE STRING
               "Installation directory for cmake files, a relative path that "
@@ -406,22 +404,22 @@ if (FMT_INSTALL)
   set(version_config ${PROJECT_BINARY_DIR}/fmt-config-version.cmake)
   set(project_config ${PROJECT_BINARY_DIR}/fmt-config.cmake)
   set(pkgconfig ${PROJECT_BINARY_DIR}/fmt.pc)
-  endif() # XP_NAMESPACE
+  endif()
   set(targets_export_name fmt-targets)
 
   set_verbose(FMT_LIB_DIR ${CMAKE_INSTALL_LIBDIR} CACHE STRING
               "Installation directory for libraries, a relative path that "
               "will be joined to ${CMAKE_INSTALL_PREFIX} or an absolute path.")
 
-  if(NOT DEFINED XP_NAMESPACE)
+  if(NOT COMMAND xpExternPackage)
   set_verbose(FMT_PKGCONFIG_DIR ${CMAKE_INSTALL_LIBDIR}/pkgconfig CACHE STRING
               "Installation directory for pkgconfig (.pc) files, a relative "
               "path that will be joined with ${CMAKE_INSTALL_PREFIX} or an "
               "absolute path.")
-  endif() # XP_NAMESPACE
+  endif()
 
   # Generate the version, config and target files into the build directory.
-  if(NOT DEFINED XP_NAMESPACE)
+  if(NOT COMMAND xpExternPackage)
   write_basic_package_version_file(
     ${version_config}
     VERSION ${FMT_VERSION}
@@ -438,7 +436,7 @@ if (FMT_INSTALL)
     ${PROJECT_SOURCE_DIR}/support/cmake/fmt-config.cmake.in
     ${project_config}
     INSTALL_DESTINATION ${FMT_CMAKE_DIR})
-  endif() # XP_NAMESPACE
+  endif()
 
   set(INSTALL_TARGETS fmt fmt-header-only)
 
@@ -459,23 +457,23 @@ if (FMT_INSTALL)
 
   # Use a namespace because CMake provides better diagnostics for namespaced
   # imported targets.
-  export(TARGETS ${INSTALL_TARGETS} NAMESPACE ${FMT_NAMESPACE}::
+  export(TARGETS ${INSTALL_TARGETS} NAMESPACE fmt::
          FILE ${PROJECT_BINARY_DIR}/${targets_export_name}.cmake)
 
   # Install version, config and target files.
-  if(NOT DEFINED XP_NAMESPACE)
+  if(NOT COMMAND xpExternPackage)
   install(FILES ${project_config} ${version_config}
           DESTINATION ${FMT_CMAKE_DIR}
           COMPONENT fmt-core)
-  endif() # XP_NAMESPACE
+  endif()
   install(EXPORT ${targets_export_name} DESTINATION ${FMT_CMAKE_DIR}
-          NAMESPACE ${FMT_NAMESPACE}::
+          NAMESPACE fmt::
           COMPONENT fmt-core)
 
-  if(NOT DEFINED XP_NAMESPACE)
+  if(NOT COMMAND xpExternPackage)
   install(FILES "${pkgconfig}" DESTINATION "${FMT_PKGCONFIG_DIR}"
           COMPONENT fmt-core)
-  endif() # XP_NAMESPACE
+  endif()
 endif ()
 
 function(add_doc_target)
@@ -537,7 +535,7 @@ if (FMT_FUZZ)
 endif ()
 
 set(gitignore ${PROJECT_SOURCE_DIR}/.gitignore)
-if (FMT_MASTER_PROJECT AND EXISTS ${gitignore} AND NOT DEFINED XP_NAMESPACE)
+if (FMT_MASTER_PROJECT AND EXISTS ${gitignore} AND NOT COMMAND xpExternPackage)
   # Get the list of ignored files from .gitignore.
   file (STRINGS ${gitignore} lines)
   list(REMOVE_ITEM lines /doc/html)
