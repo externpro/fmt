@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.8...3.28)
+cmake_minimum_required(VERSION 3.8...3.31)
 
 # Fallback for using newer policies on CMake <3.12.
 if (${CMAKE_VERSION} VERSION_LESS 3.12)
@@ -152,6 +152,7 @@ if (FMT_MASTER_PROJECT AND NOT CMAKE_BUILD_TYPE)
               "CMAKE_C_FLAGS used) Debug Release RelWithDebInfo MinSizeRel.")
 endif ()
 
+set(CMAKE_PROJECT_TOP_LEVEL_INCLUDES .devcontainer/cmake/xproinc.cmake)
 project(FMT CXX)
 include(GNUInstallDirs)
 set_verbose(FMT_INC_DIR ${CMAKE_INSTALL_INCLUDEDIR} CACHE STRING
@@ -385,6 +386,16 @@ target_include_directories(fmt-header-only
 
 # Install targets.
 if (FMT_INSTALL)
+  if(COMMAND xpExternPackage)
+    xpExternPackage(REPO_NAME fmt
+      TARGETS_FILE fmt-targets LIBRARIES fmt fmt-header-only
+      BASE ${FMT_VERSION} XPDIFF "patch"
+      WEB "https://fmt.dev/" UPSTREAM "github.com/fmtlib/fmt"
+      DESC "A modern formatting library"
+      LICENSE "[MIT](https://github.com/fmtlib/fmt?tab=MIT-1-ov-file#readme 'MIT License')"
+      )
+    set(FMT_CMAKE_DIR ${CMAKE_INSTALL_CMAKEDIR})
+  else()
   include(CMakePackageConfigHelpers)
   set_verbose(FMT_CMAKE_DIR ${CMAKE_INSTALL_LIBDIR}/cmake/fmt CACHE STRING
               "Installation directory for cmake files, a relative path that "
@@ -393,18 +404,22 @@ if (FMT_INSTALL)
   set(version_config ${PROJECT_BINARY_DIR}/fmt-config-version.cmake)
   set(project_config ${PROJECT_BINARY_DIR}/fmt-config.cmake)
   set(pkgconfig ${PROJECT_BINARY_DIR}/fmt.pc)
+  endif()
   set(targets_export_name fmt-targets)
 
   set_verbose(FMT_LIB_DIR ${CMAKE_INSTALL_LIBDIR} CACHE STRING
               "Installation directory for libraries, a relative path that "
               "will be joined to ${CMAKE_INSTALL_PREFIX} or an absolute path.")
 
+  if(NOT COMMAND xpExternPackage)
   set_verbose(FMT_PKGCONFIG_DIR ${CMAKE_INSTALL_LIBDIR}/pkgconfig CACHE STRING
               "Installation directory for pkgconfig (.pc) files, a relative "
               "path that will be joined with ${CMAKE_INSTALL_PREFIX} or an "
               "absolute path.")
+  endif()
 
   # Generate the version, config and target files into the build directory.
+  if(NOT COMMAND xpExternPackage)
   write_basic_package_version_file(
     ${version_config}
     VERSION ${FMT_VERSION}
@@ -421,6 +436,7 @@ if (FMT_INSTALL)
     ${PROJECT_SOURCE_DIR}/support/cmake/fmt-config.cmake.in
     ${project_config}
     INSTALL_DESTINATION ${FMT_CMAKE_DIR})
+  endif()
 
   set(INSTALL_TARGETS fmt fmt-header-only)
 
@@ -445,15 +461,19 @@ if (FMT_INSTALL)
          FILE ${PROJECT_BINARY_DIR}/${targets_export_name}.cmake)
 
   # Install version, config and target files.
+  if(NOT COMMAND xpExternPackage)
   install(FILES ${project_config} ${version_config}
           DESTINATION ${FMT_CMAKE_DIR}
           COMPONENT fmt-core)
+  endif()
   install(EXPORT ${targets_export_name} DESTINATION ${FMT_CMAKE_DIR}
           NAMESPACE fmt::
           COMPONENT fmt-core)
 
+  if(NOT COMMAND xpExternPackage)
   install(FILES "${pkgconfig}" DESTINATION "${FMT_PKGCONFIG_DIR}"
           COMPONENT fmt-core)
+  endif()
 endif ()
 
 function(add_doc_target)
@@ -515,7 +535,7 @@ if (FMT_FUZZ)
 endif ()
 
 set(gitignore ${PROJECT_SOURCE_DIR}/.gitignore)
-if (FMT_MASTER_PROJECT AND EXISTS ${gitignore})
+if (FMT_MASTER_PROJECT AND EXISTS ${gitignore} AND NOT COMMAND xpExternPackage)
   # Get the list of ignored files from .gitignore.
   file (STRINGS ${gitignore} lines)
   list(REMOVE_ITEM lines /doc/html)
