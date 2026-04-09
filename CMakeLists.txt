@@ -454,6 +454,9 @@ if (FMT_INSTALL)
   export(TARGETS ${INSTALL_TARGETS} NAMESPACE fmt::
          FILE ${PROJECT_BINARY_DIR}/${targets_export_name}.cmake)
 
+  if(COMMAND xpExternPackage)
+    unset(project_config)
+  endif()
   # Install version, config and target files.
   install(FILES ${project_config} ${version_config}
           DESTINATION ${FMT_CMAKE_DIR}
