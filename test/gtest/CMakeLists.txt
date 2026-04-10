@@ -13,7 +13,7 @@ target_compile_features(gtest PUBLIC cxx_std_11)
 
 find_package(Threads)
 if (Threads_FOUND)
-  target_link_libraries(gtest ${CMAKE_THREAD_LIBS_INIT})
+  target_link_libraries(gtest Threads::Threads)
 else ()
   target_compile_definitions(gtest PUBLIC GTEST_HAS_PTHREAD=0)
 endif ()
