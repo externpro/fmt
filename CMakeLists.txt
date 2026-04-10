@@ -368,8 +368,8 @@ if (NOT MSVC)
   # Unicode is always supported on compilers other than MSVC.
 elseif (FMT_UNICODE)
   # Unicode support requires compiling with /utf-8.
-  target_compile_options(fmt PUBLIC /utf-8)
-  target_compile_options(fmt-header-only INTERFACE /utf-8)
+  target_compile_options(fmt PUBLIC "/utf-8")
+  target_compile_options(fmt-header-only INTERFACE "/utf-8")
 else ()
   target_compile_definitions(fmt PUBLIC FMT_UNICODE=0)
 endif ()
