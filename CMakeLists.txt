@@ -386,7 +386,7 @@ target_include_directories(fmt-header-only
 if (FMT_INSTALL)
   if(COMMAND xpExternPackage)
     xpExternPackage(REPO_NAME fmt TARGETS_FILE fmt-targets
-      LIBRARIES fmt fmt-header-only
+      LIBRARIES fmt fmt-header-only DEFAULT_TARGETS fmt
       BASE ${FMT_VERSION} XPDIFF "patch"
       WEB "https://fmt.dev/" UPSTREAM "github.com/fmtlib/fmt"
       DESC "A modern formatting library"
