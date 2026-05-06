@@ -385,9 +385,12 @@ target_include_directories(fmt-header-only
 # Install targets.
 if (FMT_INSTALL)
   if(COMMAND xpExternPackage)
+    if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
+      set(optParams FIND_XPRO_CMAKE) # /utf-8 flag disregarded with CPS
+    endif()
     xpExternPackage(REPO_NAME fmt TARGETS_FILE fmt-targets
       LIBRARIES fmt fmt-header-only DEFAULT_TARGETS fmt
-      BASE ${FMT_VERSION} XPDIFF "patch"
+      BASE ${FMT_VERSION} XPDIFF "patch" ${optParams}
       WEB "https://fmt.dev/" UPSTREAM "github.com/fmtlib/fmt"
       DESC "A modern formatting library"
       LICENSE "[MIT](https://github.com/fmtlib/fmt?tab=MIT-1-ov-file#readme 'MIT License')"
